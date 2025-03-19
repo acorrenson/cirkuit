@@ -1,0 +1,4 @@
+(executable
+ (public_name cirkuit)
+ (name main)
+ (libraries cirkuit))
