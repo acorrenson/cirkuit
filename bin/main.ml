@@ -1,1 +1,6 @@
-let () = print_endline "Hello, World!"
+open Cirkuit.Circuit
+
+let () =
+  Format.printf "%a\n" Circuit.to_dot example;
+
+
