@@ -1,0 +1,15 @@
+block double
+
+  inputs 1
+  outputs 1
+  registers 0
+
+  myadd add
+
+  wires
+
+  wire out.0 myadd.0
+  wire in.0 myadd.1
+  wire myadd.0 out.0
+
+end
