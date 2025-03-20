@@ -41,7 +41,8 @@ let commands cmd =
 let speclist =
   [
     ("-o", Arg.Set_string output_file, "output file");
-    ("-i", Arg.Set_string input_file, "output file")
+    ("-i", Arg.Set_string input_file, "output file");
+    ("-b", Arg.String (fun x -> block_name := x), "block name")
   ]
 
 let () =

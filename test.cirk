@@ -18,7 +18,6 @@ block main
   wire in.0 myadd.0
   wire in.0 myadd.1
   wire myadd.0 reg.0
-  wire myadd.0 myadd.0
   wire reg.0 out.0
 
 end
