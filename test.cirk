@@ -1,3 +1,4 @@
+-- addition (just the interface, it's supposed to be implemented)
 block add
   inputs 2
   outputs 1
@@ -5,6 +6,7 @@ block add
   wires
 end
 
+-- double its input with 1 tick delay
 block main
 
   inputs 1

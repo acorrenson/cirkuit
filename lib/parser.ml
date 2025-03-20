@@ -18,15 +18,22 @@ let parse ic =
     |> Option.map (List.filter ((<>) ""))
   in
 
-  let get_line () =
+  let rec get_real_line_opt () =
     match get_line_opt () with
+    | Some [] -> get_real_line_opt ()
+    | Some ("--"::_) -> get_real_line_opt ()
+    | ln -> ln
+  in
+
+  let get_line () =
+    match get_real_line_opt () with
     | None -> 
       error !lc "unexpected EOF"
     | Some line -> line
   in
 
   let rec parse_circ () =
-    match get_line_opt () with
+    match get_real_line_opt () with
     | None -> circ
     | Some [] ->
       parse_circ ()
