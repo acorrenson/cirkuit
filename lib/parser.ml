@@ -1,4 +1,8 @@
-open Circuit
+open Lang
+
+let error lc s =
+  Printf.eprintf "error at line %d: %s\n" lc s;
+  exit 1
 
 let parse ic =
   let lc = ref 0 in
@@ -17,8 +21,7 @@ let parse ic =
   let get_line () =
     match get_line_opt () with
     | None -> 
-      Printf.eprintf "unexpected EOF at line %d" !lc;
-      exit 1
+      error !lc "unexpected EOF"
     | Some line -> line
   in
 
@@ -32,11 +35,9 @@ let parse ic =
       Hashtbl.add blocks name block;
       parse_circ ()
     | Some ["end"] ->
-      Printf.eprintf "parsing error line %d: unexpected \"end\"" !lc;
-      exit 1
-    | Some _ ->
-      Printf.eprintf "parsing error line %d" !lc;
-      exit 1
+      error !lc "unexpected \"end\""
+    | Some (tok::_) ->
+      error !lc @@ "unexpected tocken \"" ^ tok ^ "\""
 
   and parse_block () =
     let inputs = parse_inputs () in
@@ -50,25 +51,22 @@ let parse ic =
     match get_line () with
     | [] -> parse_inputs ()
     | ["inputs"; n] -> int_of_string n
-    | _ ->
-      Printf.eprintf "inputs declaration was expected at line %d" !lc;
-      exit 1
+    | tok::_ ->
+      error !lc @@ "inputs declaration expected, found \""  ^ tok ^ "\""
 
   and parse_outputs () =
     match get_line () with
     | [] -> parse_outputs ()
     | ["outputs"; n] -> int_of_string n
-    | _ ->
-      Printf.eprintf "outputs declaration was expected at line %d" !lc;
-      exit 1
+    | tok::_ ->
+      error !lc @@ "outputs declaration expected, found \"" ^ tok ^ "\""
 
   and parse_registers () =
     match get_line () with
     | [] -> parse_registers ()
     | ["registers"; n] -> int_of_string n
-    | _ ->
-      Printf.eprintf "registers declaration was expected at line %d" !lc;
-      exit 1
+    | tok::_ ->
+      error !lc @@ "registers declaration expected, found \""  ^ tok ^ "\""
 
   and parse_wires () =
     match get_line () with
@@ -78,42 +76,38 @@ let parse ic =
       let src = parse_src inp in
       let dst = parse_dst out in
       WireSet.add (Wire.{ src; dst }) (parse_wires ())
-    | "wire"::_ ->
-      Printf.eprintf "a wire declaration must have 2 arguments (at line %d)" !lc;
-      exit 1
-    | _ ->
-      Printf.eprintf "wire declaration was expected at line %d" !lc;
-      exit 1
+    | "wire"::args ->
+      error !lc
+        @@ Printf.sprintf "a wire declaration must have 2 arguments (found %d)"
+        @@ List.length args
+    | tok::_ ->
+      error !lc @@ "wire declaration expected, found \"" ^ tok ^ "\""
  
   and parse_src str =
     match String.split_on_char '.' str with
     | ["in"; n] ->
       Source.INPUT { id = int_of_string n }
     | ["out"; _] ->
-      Printf.eprintf "the source of a wire cannot be an output (at line %d)" !lc;
-      exit 1
+      error !lc "the source of a wire cannot be an output"
     | ["reg"; n] ->
       Source.REGISTER { output = int_of_string n }
     | [name; n] ->
       Source.BLOCK { name; output = int_of_string n }
     | _ ->
-      Printf.eprintf "invalid source wire argument at line %d" !lc;
-      exit 1
+      error !lc "invalid source wire argument"
 
   and parse_dst str =
     match String.split_on_char '.' str with
     | ["out"; n] ->
       Target.OUTPUT { id = int_of_string n }
     | ["in"; _] ->
-      Printf.eprintf "the destination of a wire cannot be an input (at line %d)" !lc;
-      exit 1
+      error !lc "the destination of a wire cannot be an input";
     | ["reg"; n] ->
       Target.REGISTER { input = int_of_string n }
     | [name; n] ->
       Target.BLOCK { name; input = int_of_string n }
     | _ ->
-      Printf.eprintf "invalid destination wire argument at line %d" !lc;
-      exit 1
+      error !lc "invalid destination wire argument at line";
   
   and parse_named_blocks () =
     match get_line () with
@@ -121,9 +115,7 @@ let parse ic =
     | [name; block] ->
       (name, block)::parse_named_blocks ()
     | ["wires"] -> []
-    | _ ->
-      Printf.eprintf "wire declaration was expected at line %d" !lc;
-    exit 1
-
-  in
-  parse_circ ()
+    | tok::_ ->
+      error !lc @@ "wires declaration was expected, found \"" ^ tok ^ "\""
+  
+  in parse_circ ()

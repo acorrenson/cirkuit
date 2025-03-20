@@ -1,15 +1,23 @@
-block double
+block add
+  inputs 2
+  outputs 1
+  registers 0
+  wires
+end
+
+block main
 
   inputs 1
   outputs 1
-  registers 0
+  registers 1
 
   myadd add
 
   wires
 
-  wire out.0 myadd.0
+  wire in.0 myadd.0
   wire in.0 myadd.1
-  wire myadd.0 out.0
+  wire myadd.0 reg.0
+  wire reg.0 out.0
 
 end

@@ -1,0 +1,9 @@
+digraph {
+0 [label="input 0"];
+1 [label="output 0"];
+2 [label="register 0", shape="rectangle"];
+myadd -> 2 [label="0 - 0"];
+2 -> 1 [label="0 - 0"];
+0 -> myadd [label="0 - 0"];
+0 -> myadd [label="0 - 1"];
+}

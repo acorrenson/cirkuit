@@ -40,6 +40,43 @@ module Block = struct
     blocks    : (string, string) Hashtbl.t;
     wires     : WireSet.t;
   }
+  let validate (ctx : (string, t) Hashtbl.t) ({ inputs; outputs; registers; blocks; wires } : t) =
+    let check_named name =
+      match Hashtbl.find_opt blocks name with
+      | None -> failwith @@ "undeclared block " ^ name
+      | Some block_type ->
+        match Hashtbl.find_opt ctx block_type with
+        | None -> failwith @@ "uknown block " ^ block_type
+        | Some block -> block
+    in
+    let check_src (src : Source.t) =
+      match src with
+      | Source.BLOCK { name; output } ->
+        if output >= (check_named name).outputs then
+          failwith (Format.sprintf "invalid wire %s.%d" name output)
+      | Source.INPUT { id } ->
+        if id >= inputs then
+          failwith (Format.sprintf "invalid wire in.%d" id)
+      | Source.REGISTER { output } ->
+        if output >= registers then
+          failwith (Format.sprintf "undefined register reg.%d" output)
+    in
+    let check_dst (src : Target.t) =
+      match src with
+      | Target.BLOCK { name; input } ->
+        if input >= (check_named name).inputs then
+          failwith (Format.sprintf "invalid wire %s.%d" name input)
+      | Target.OUTPUT { id } ->
+        if id >= outputs then
+          failwith (Format.sprintf "invalid wire out.%d" id)
+      | Target.REGISTER { input } ->
+        if input >= registers then
+          failwith (Format.sprintf "undefined register reg.%d" input)
+    in
+    WireSet.iter (fun w ->
+      check_src w.src;
+      check_dst w.dst
+    ) wires
 end
 
 module Circuit = struct
@@ -48,8 +85,16 @@ module Circuit = struct
     main   : string
   }
 
-  let to_dot fmt (c : t) =
-    let main = Hashtbl.find c.blocks c.main in
+  let validate (c : t) =
+    Hashtbl.iter (fun _ b -> Block.validate c.blocks b) c.blocks
+
+  let to_dot fmt ?(block: string option) (c : t) =
+    validate c;
+    let name = Option.fold block ~some:Fun.id ~none:c.main in
+    let main =
+      try Hashtbl.find c.blocks name
+      with _ -> failwith @@ "no block \"" ^ name ^ "\""
+    in
     let print_src fmt (s : Source.t) =
       match s with
       | Source.BLOCK { name; _ } ->
