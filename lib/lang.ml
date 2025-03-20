@@ -73,10 +73,16 @@ module Block = struct
         if input >= registers then
           failwith (Format.sprintf "undefined register reg.%d" input)
     in
-    WireSet.iter (fun w ->
+    let check_wire (w : Wire.t) =
       check_src w.src;
-      check_dst w.dst
-    ) wires
+      check_dst w.dst;
+      match w.src, w.dst with
+      | Source.BLOCK lhs, Target.BLOCK rhs ->
+        if lhs.name = rhs.name then
+          failwith (Format.sprintf "cycle %s.%d <-> %s.%d" lhs.name lhs.output rhs.name rhs.input)
+      | _ -> ()
+    in
+    WireSet.iter check_wire wires
 end
 
 module Circuit = struct
